@@ -89,9 +89,7 @@ jobs:
 
       - name: Get sing-box version
         run: |
-          GOHOSTOS = $(go env GOHOSTOS)
-          GOHOSTARCH = $(go env GOHOSTARCH)
-          VERSION=$(CGO_ENABLED=0 GOOS=$GOHOSTOS GOARCH=$GOHOSTARCH go run ./cmd/internal/read_tag)
+          VERSION=$(go run ./cmd/internal/read_tag)
           echo "VERSION: $VERSION"
           echo "TAG_NAME=$VERSION" >> $GITHUB_ENV
           echo "RELEASE_NAME=$VERSION" >> $GITHUB_ENV

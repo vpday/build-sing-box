@@ -182,7 +182,7 @@ jobs:
           chmod +x ./sing-box-${{ matrix.name }}
           version_output=$(./sing-box-${{ matrix.name }} version)
           echo "Version Output: $version_output"
-          version=$(echo "$version_output" | awk '{print $NF}')
+          version=$(echo "$version_output" | awk 'NR==1 {print $NF}')
           echo "Extracted Version: $version"
           echo "TAG_NAME=$version" >> $GITHUB_ENV
           echo "RELEASE_NAME=$version" >> $GITHUB_ENV

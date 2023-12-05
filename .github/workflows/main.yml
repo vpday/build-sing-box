@@ -87,9 +87,9 @@ jobs:
         with:
           go-version: 'stable'
 
-      - name: Get sing-box version
+      - name: Get Version
         run: |
-          VERSION=$(go run ./cmd/internal/read_tag)
+          VERSION=$(CGO_ENABLED=0 GOOS=$(go env GOHOSTOS) GOARCH=$(go env GOHOSTARCH) go run ./cmd/internal/read_tag)
           echo "VERSION: $VERSION"
           echo "TAG_NAME=$VERSION" >> $GITHUB_ENV
           echo "RELEASE_NAME=$VERSION" >> $GITHUB_ENV

@@ -178,8 +178,9 @@ jobs:
         run: mv sing-box* sing-box-${{ matrix.name }}
 
       - name: Get sing-box version
+        if: ${{ contains(matrix.name, 'linux') }}
         run: |
-          version_output=$(./sing-box-linux-amd64 version)
+          version_output=$(sing-box-${{ matrix.name }} version)
           echo "Version Output: $version_output"
           version=$(echo "$version_output" | awk '{print $NF}')
           echo "Extracted Version: $version"

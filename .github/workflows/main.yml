@@ -5,8 +5,8 @@ permissions:
 
 on:
   workflow_dispatch:
-  # schedule:
-  #  - cron: "0 3 * * *"
+  schedule:
+   - cron: "0 8 * * *"
 
 jobs:
   cross:
@@ -131,14 +131,12 @@ jobs:
       - name: Set variables
         if: github.event_name != 'schedule'
         run: |
-          echo "RELEASE_NAME=Released on $(date +%Y%m%d%H)" >> $GITHUB_ENV
-          echo "TAG_NAME=$(date +%Y%m%d%H)" >> $GITHUB_ENV
+          echo "PRERELEASE=false" >> $GITHUB_ENV
 
       - name: Set variables
         if: github.event_name == 'schedule'
         run: |
-          echo "RELEASE_NAME=Nightly Released on $(date +%Y%m%d%H)-nightly" >> $GITHUB_ENV
-          echo "TAG_NAME=$(date +%Y%m%d%H)-nightly" >> $GITHUB_ENV
+          echo "PRERELEASE=true" >> $GITHUB_ENV
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -179,8 +177,8 @@ jobs:
 
       - name: Get sing-box version
         run: |
-          chmod +x ./sing-box-${{ matrix.name }}
-          version_output=$(./sing-box-${{ matrix.name }} version)
+          chmod +x ./sing-box-linux-amd64
+          version_output=$(./sing-box-linux-amd64 version)
           echo "Version Output: $version_output"
           version=$(echo "$version_output" | awk 'NR==1 {print $NF}')
           echo "Extracted Version: $version"
@@ -196,6 +194,7 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
+          prerelease: ${{ env.PRERELEASE }}
           tag_name: ${{ env.TAG_NAME }}
           name: ${{ env.RELEASE_NAME }}
           files: |

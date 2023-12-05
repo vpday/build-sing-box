@@ -6,13 +6,59 @@ permissions:
 on:
   workflow_dispatch:
   schedule:
-   - cron: "0 8 * * *"
+    - cron: "0 8 * * *"
 
 jobs:
+  build_go_stable:
+    name: Build Go stable
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        if: github.event_name != 'schedule'
+        with:
+          fetch-depth: 0
+          repository: SagerNet/sing-box
+          ref: main-next
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        if: github.event_name == 'schedule'
+        with:
+          fetch-depth: 0
+          repository: SagerNet/sing-box
+          ref: dev-next
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 'stable'
+
+      - name: Cache go module
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Build
+        run: make ci_build
+
+      - name: Get sing-box version
+        run: |
+          chmod +x ./sing-box-linux-amd64
+          version_output=$(./sing-box-linux-amd64 version)
+          echo "Version Output: $version_output"
+          version=$(echo "$version_output" | awk 'NR==1 {print $NF}')
+          echo "Extracted Version: $version"
+          echo "TAG_NAME=$version" >> $GITHUB_ENV
+          echo "RELEASE_NAME=$version" >> $GITHUB_ENV
   cross:
     strategy:
       fail-fast: false
-      max-parallel: 1
       matrix:
         include:
           # linux
@@ -104,16 +150,6 @@ jobs:
       - name: Rename
         if: ${{ contains(matrix.name, 'linux') || contains(matrix.name, 'bsd') || contains(matrix.name, 'darwin') || contains(matrix.name, 'android') }}
         run: mv sing-box* sing-box-${{ matrix.name }}
-
-      - name: Get sing-box version
-        run: |
-          chmod +x ./sing-box-linux-amd64
-          version_output=$(./sing-box-linux-amd64 version)
-          echo "Version Output: $version_output"
-          version=$(echo "$version_output" | awk 'NR==1 {print $NF}')
-          echo "Extracted Version: $version"
-          echo "TAG_NAME=$version" >> $GITHUB_ENV
-          echo "RELEASE_NAME=$version" >> $GITHUB_ENV
 
       #- name: Upload artifact
       #  uses: actions/upload-artifact@v3

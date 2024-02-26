@@ -76,20 +76,30 @@ jobs:
           echo "TAG_NAME=$VERSION" >> $GITHUB_ENV
           echo "RELEASE_NAME=$VERSION" >> $GITHUB_ENV
 
+      - uses: mukunku/tag-exists-action@v1.6.0
+        id: check-tag
+        with:
+          tag: ${{ env.TAG_NAME }}
+
+      - run: echo "Tag exists!"
+        if: ${{ steps.check-tag.outputs.exists }}
+
       - name: Build
         id: build
+        if: ${{ !steps.check-tag.outputs.exists }}
         run: make
 
       - name: Test
+        if: ${{ !steps.check-tag.outputs.exists }}
         run: |
           echo ${{ contains(matrix.name, 'windows') }}
           echo ${{ matrix.name }}
 
       - name: Rename Windows
-        if: ${{ contains(matrix.name, 'windows') }}
+        if: ${{ (contains(matrix.name, 'windows')) && !steps.check-tag.outputs.exists }}
         run: mv sing-box* sing-box-${{ matrix.name }}.exe
       - name: Rename
-        if: ${{ contains(matrix.name, 'linux') }}
+        if: ${{ contains(matrix.name, 'linux') && !steps.check-tag.outputs.exists }}
         run: mv sing-box* sing-box-${{ matrix.name }}
 
       #- name: Upload artifact
@@ -100,6 +110,7 @@ jobs:
 
       - name: Release
         uses: softprops/action-gh-release@v1
+        if: ${{ !steps.check-tag.outputs.exists }}
         with:
           tag_name: ${{ env.TAG_NAME }}
           name: ${{ env.RELEASE_NAME }}

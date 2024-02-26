@@ -2,6 +2,7 @@ name: build sing-box
 
 permissions:
   contents: write
+  discussions: write
 
 on:
   workflow_dispatch:

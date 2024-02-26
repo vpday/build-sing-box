@@ -10,7 +10,31 @@ on:
     - cron: "0 0 * * *"
 
 jobs:
+  check-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          repository: SagerNet/sing-box
+          ref: main-next
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+      - name: Get Version
+        run: |
+          VERSION=$(CGO_ENABLED=0 GOOS=$(go env GOHOSTOS) GOARCH=$(go env GOHOSTARCH) go run ./cmd/internal/read_tag)
+          echo "VERSION: $VERSION"
+          echo "TAG_NAME=$VERSION" >> $GITHUB_ENV
+          echo "RELEASE_NAME=$VERSION" >> $GITHUB_ENV
+      - uses: mukunku/tag-exists-action@v1.6.0
+        with:
+          tag: ${{ env.TAG_NAME }}
   cross:
+    if: ${{ steps.check-tag.outputs.exists == 'false' }}
+    needs: check-tag
     strategy:
       fail-fast: false
       matrix:
@@ -76,30 +100,20 @@ jobs:
           echo "TAG_NAME=$VERSION" >> $GITHUB_ENV
           echo "RELEASE_NAME=$VERSION" >> $GITHUB_ENV
 
-      - uses: mukunku/tag-exists-action@v1.6.0
-        id: check-tag
-        with:
-          tag: ${{ env.TAG_NAME }}
-
-      - run: echo "Tag exists!"
-        if: ${{ steps.check-tag.outputs.exists == 'true' }}
-
       - name: Build
         id: build
-        if: ${{ steps.check-tag.outputs.exists == 'false' }}
         run: make
 
       - name: Test
-        if: ${{ steps.check-tag.outputs.exists == 'false' }}
         run: |
           echo ${{ contains(matrix.name, 'windows') }}
           echo ${{ matrix.name }}
 
       - name: Rename Windows
-        if: ${{ (contains(matrix.name, 'windows')) && steps.check-tag.outputs.exists == 'false' }}
+        if: ${{ (contains(matrix.name, 'windows')) }}
         run: mv sing-box* sing-box-${{ matrix.name }}.exe
       - name: Rename
-        if: ${{ contains(matrix.name, 'linux') && steps.check-tag.outputs.exists == 'false' }}
+        if: ${{ contains(matrix.name, 'linux') }}
         run: mv sing-box* sing-box-${{ matrix.name }}
 
       #- name: Upload artifact
@@ -110,7 +124,6 @@ jobs:
 
       - name: Release
         uses: softprops/action-gh-release@v1
-        if: ${{ steps.check-tag.outputs.exists == 'false' }}
         with:
           tag_name: ${{ env.TAG_NAME }}
           name: ${{ env.RELEASE_NAME }}

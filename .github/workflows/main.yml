@@ -12,6 +12,8 @@ on:
 jobs:
   check-tag:
     runs-on: ubuntu-latest
+    outputs:
+      exists: ${{ steps.check-tag.outputs.exists }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,10 +32,13 @@ jobs:
           echo "TAG_NAME=$VERSION" >> $GITHUB_ENV
           echo "RELEASE_NAME=$VERSION" >> $GITHUB_ENV
       - uses: mukunku/tag-exists-action@v1.6.0
+        id: check-tag
         with:
           tag: ${{ env.TAG_NAME }}
+        run: echo "exists=${{steps.check-tag.outputs.exists}}" >> $GITHUB_OUTPUT
+
   cross:
-    if: ${{ steps.check-tag.outputs.exists == 'false' }}
+    if: ${{ jobs.check-tag.outputs.exists == 'false' }}
     needs: check-tag
     strategy:
       fail-fast: false

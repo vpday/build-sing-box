@@ -35,6 +35,7 @@ jobs:
         id: check-tag
         with:
           tag: ${{ env.TAG_NAME }}
+      - name: Get Output
         run: echo "exists=${{steps.check-tag.outputs.exists}}" >> $GITHUB_OUTPUT
 
   cross:

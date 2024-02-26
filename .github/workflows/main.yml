@@ -39,7 +39,7 @@ jobs:
         run: echo "exists=${{steps.check-tag.outputs.exists}}" >> $GITHUB_OUTPUT
 
   cross:
-    if: ${{ needs.jobs.check-tag.outputs.exists == 'false' }}
+    if: ${{ !needs.jobs.check-tag.outputs.exists }}
     needs: check-tag
     strategy:
       fail-fast: false

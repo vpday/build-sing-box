@@ -82,24 +82,24 @@ jobs:
           tag: ${{ env.TAG_NAME }}
 
       - run: echo "Tag exists!"
-        if: ${{ steps.check-tag.outputs.exists == true }}
+        if: ${{ steps.check-tag.outputs.exists == 'true' }}
 
       - name: Build
         id: build
-        if: ${{ steps.check-tag.outputs.exists == false }}
+        if: ${{ steps.check-tag.outputs.exists == 'false' }}
         run: make
 
       - name: Test
-        if: ${{ steps.check-tag.outputs.exists == false }}
+        if: ${{ steps.check-tag.outputs.exists == 'false' }}
         run: |
           echo ${{ contains(matrix.name, 'windows') }}
           echo ${{ matrix.name }}
 
       - name: Rename Windows
-        if: ${{ (contains(matrix.name, 'windows')) && steps.check-tag.outputs.exists == false }}
+        if: ${{ (contains(matrix.name, 'windows')) && steps.check-tag.outputs.exists == 'false' }}
         run: mv sing-box* sing-box-${{ matrix.name }}.exe
       - name: Rename
-        if: ${{ contains(matrix.name, 'linux') && steps.check-tag.outputs.exists == false }}
+        if: ${{ contains(matrix.name, 'linux') && steps.check-tag.outputs.exists == 'false' }}
         run: mv sing-box* sing-box-${{ matrix.name }}
 
       #- name: Upload artifact
@@ -110,7 +110,7 @@ jobs:
 
       - name: Release
         uses: softprops/action-gh-release@v1
-        if: ${{ steps.check-tag.outputs.exists == false }}
+        if: ${{ steps.check-tag.outputs.exists == 'false' }}
         with:
           tag_name: ${{ env.TAG_NAME }}
           name: ${{ env.RELEASE_NAME }}

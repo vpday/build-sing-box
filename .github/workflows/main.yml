@@ -13,7 +13,7 @@ jobs:
   check-tag:
     runs-on: ubuntu-latest
     outputs:
-      exists: ${{ steps.check-tag.outputs.exists }}
+      tag-exists: ${{ steps.check-tag.outputs.tag-exists }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,11 +36,11 @@ jobs:
         with:
           tag: ${{ env.TAG_NAME }}
       - name: Get Output
-        run: echo "exists=${{steps.check-tag.outputs.exists}}" >> $GITHUB_OUTPUT
+        run: echo "tag-exists=${{steps.check-tag.outputs.exists}}" >> $GITHUB_OUTPUT
 
   cross:
     needs: check-tag
-    if: ${{ needs.jobs.check-tag.outputs.exists == 'false' }}
+    if: ${{ needs.jobs.check-tag.outputs.tag-exists == 'false' }}
     strategy:
       fail-fast: false
       matrix:

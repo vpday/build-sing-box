@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tag-exists: ${{ steps.check-tag.outputs.exists }}
+      version: ${{ steps.get-version.outputs.version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -26,22 +27,36 @@ jobs:
         with:
           go-version: 'stable'
       - name: Get Version
+        id: get-version
         run: |
           VERSION=$(CGO_ENABLED=0 GOOS=$(go env GOHOSTOS) GOARCH=$(go env GOHOSTARCH) go run ./cmd/internal/read_tag)
-          echo "VERSION: $VERSION"
-          echo "TAG_NAME=$VERSION" >> $GITHUB_ENV
-          echo "RELEASE_NAME=$VERSION" >> $GITHUB_ENV
+          echo "detected version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
       - uses: mukunku/tag-exists-action@v1.7.0
         id: check-tag
         with:
-          tag: ${{ env.TAG_NAME }}
+          tag: ${{ steps.get-version.outputs.version }}
       - name: Get Output
         run: |
           echo "tag-exists=${{ steps.check-tag.outputs.exists }}"
+          echo "version=${{ steps.get-version.outputs.version }}"
+
+  create-release:
+    needs: check-tag
+    if: needs.check-tag.outputs.tag-exists == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.check-tag.outputs.version }}
+          name: ${{ needs.check-tag.outputs.version }}
+          draft: false
+          prerelease: false
 
   cross:
     if: needs.check-tag.outputs.tag-exists == 'false'
-    needs: check-tag
+    needs: [check-tag, create-release]
     strategy:
       fail-fast: false
       matrix:
@@ -87,6 +102,7 @@ jobs:
       GOARM: ${{ matrix.goarm }}
       CGO_ENABLED: 0
       TAGS: with_quic,with_dhcp,with_wireguard,with_clash_api,with_gvisor
+      TAG_NAME: ${{ needs.check-tag.outputs.version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -99,13 +115,6 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: 'stable'
-
-      - name: Get Version
-        run: |
-          VERSION=$(CGO_ENABLED=0 GOOS=$(go env GOHOSTOS) GOARCH=$(go env GOHOSTARCH) go run ./cmd/internal/read_tag)
-          echo "VERSION: $VERSION"
-          echo "TAG_NAME=$VERSION" >> $GITHUB_ENV
-          echo "RELEASE_NAME=$VERSION" >> $GITHUB_ENV
 
       - name: Build
         id: build
@@ -123,16 +132,10 @@ jobs:
         if: ${{ contains(matrix.name, 'linux') }}
         run: mv sing-box* sing-box-${{ matrix.name }}
 
-      #- name: Upload artifact
-      #  uses: actions/upload-artifact@v3
-      #  with:
-      #    name: sing-box-${{ matrix.name }}
-      #    path: sing-box*
-
-      - name: Release
+      - name: Upload Assets
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.TAG_NAME }}
-          name: ${{ env.RELEASE_NAME }}
+          name: ${{ env.TAG_NAME }}
           files: |
             sing-box*

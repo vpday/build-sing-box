@@ -51,8 +51,7 @@ jobs:
         with:
           tag_name: ${{ needs.check-tag.outputs.version }}
           name: ${{ needs.check-tag.outputs.version }}
-          draft: false
-          prerelease: false
+          draft: true
 
   cross:
     if: needs.check-tag.outputs.tag-exists == 'false'
@@ -137,5 +136,6 @@ jobs:
         with:
           tag_name: ${{ env.TAG_NAME }}
           name: ${{ env.TAG_NAME }}
+          draft: false
           files: |
             sing-box*

@@ -21,7 +21,7 @@ jobs:
         with:
           fetch-depth: 0
           repository: SagerNet/sing-box
-          ref: main-next
+          ref: stable
       - name: Setup Go
         uses: actions/setup-go@v6
         with:

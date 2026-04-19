@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.check-tag.outputs.version }}
           name: ${{ needs.check-tag.outputs.version }}
@@ -132,7 +132,7 @@ jobs:
         run: mv sing-box* sing-box-${{ matrix.name }}
 
       - name: Upload Assets
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ env.TAG_NAME }}
           name: ${{ env.TAG_NAME }}
